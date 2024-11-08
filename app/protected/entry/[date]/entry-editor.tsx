@@ -203,7 +203,10 @@ export default ({ userId, content, date }: { userId: string, content: string | u
         }, 1000);
 
     return (
-        <EditorProvider onUpdate={debouncedUpdate} slotBefore={<MenuBar />} extensions={extensions} content={content}></EditorProvider>
+        <div className="border rounded-lg overflow-hidden shadow-sm min-h-96">
+
+            <EditorProvider onUpdate={debouncedUpdate} slotBefore={<MenuBar />} extensions={extensions} content={content}></EditorProvider>
+        </div>
     );
 
 }

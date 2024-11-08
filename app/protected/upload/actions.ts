@@ -1,5 +1,6 @@
 "use server";
 import { createClient } from "@/utils/supabase/server";
+import { revalidatePath } from "next/cache";
 import PgBoss from "pg-boss";
 
 export async function addImagesToProcessQueue(
@@ -32,4 +33,10 @@ export async function addImagesToProcessQueue(
   } catch (error) {
     console.error("failed to add job to queue", error);
   }
+}
+
+export async function removeImage(path: string) {
+  const supabase = await createClient();
+  const remove = await supabase.storage.from("user").remove([path]);
+  revalidatePath("/protected/uploads");
 }

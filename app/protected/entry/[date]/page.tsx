@@ -14,7 +14,7 @@ export default async function Page({ params }: { params: Promise<{ date: string 
 
     const entryGet = await supabase
         .from('entries')
-        .select('*')
+        .select('*, entry_srcs:entry_src(*)')
         .eq('user_id', userRes.data.user?.id)
         .eq('date', date)
         .maybeSingle()
@@ -23,10 +23,20 @@ export default async function Page({ params }: { params: Promise<{ date: string 
         throw entryGet.error
     }
 
+    const signedUrls = await supabase
+        .storage
+        .from('user')
+        .createSignedUrls(entryGet.data?.entry_srcs?.map((entrySrc) => entrySrc.path!) || [], 60);
+
     return (
         <div>
-            <h1 className='text-3xl mb-8'>{new Date().toLocaleDateString()}</h1>
+            <h1 className='text-3xl mb-8'>{new Date(date + 'T00:00:00').toLocaleDateString()}</h1>
             <EntryEditor userId={userRes.data.user?.id} content={entryGet.data?.text} date={date} />
+            <div>
+                {signedUrls.data?.map((entrySrc) => (
+                    <img key={entrySrc.path} src={entrySrc.signedUrl} />
+                ))}
+            </div>
         </div>
     );
 }

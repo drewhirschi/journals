@@ -7,6 +7,9 @@ import { redirect } from "next/navigation";
 import { NewEntryLink } from "./new-link";
 import { ActivityCalendar } from 'react-activity-calendar';
 import { JournalDashboardComponent } from "@/components/journal-dashboard";
+import { MonthYearSelectorComponent } from "@/components/month-year-selector";
+import { JournalEntry } from "@/types/data-models";
+import { text } from "stream/consumers";
 
 type ActivityCalendarData = {
   date: string;
@@ -14,7 +17,7 @@ type ActivityCalendarData = {
   level: number;
 }
 
-export default async function ProtectedPage() {
+export default async function ProtectedPage({ searchParams }: { searchParams: Promise<{ month?: string, year?: string }> }) {
   const supabase = await createClient();
 
   const {
@@ -25,13 +28,52 @@ export default async function ProtectedPage() {
     return redirect("/sign-in");
   }
 
+  let { month: monthStr, year: yearStr } = await searchParams;
+
+  const today = new Date();
+  const month = monthStr ? Number(monthStr) : today.getMonth() + 1;
+  const year = yearStr ? Number(yearStr) : today.getFullYear();
+
+  let startDate: string;
+  let endDate: string;
+
+  if (!monthStr && !yearStr) {
+    endDate = today.toLocaleDateString();
+    const previousMonth = new Date(today);
+    previousMonth.setFullYear(today.getFullYear() - 1);
+    startDate = previousMonth.toLocaleDateString();
+  } else {
+    startDate = new Date(year, month - 1, 1).toLocaleDateString();
+    endDate = new Date(year, month, 0).toLocaleDateString();
+  }
+
+
   const getEntries = await supabase
     .from("entries")
-    .select("*")
+    .select("*, attachments:entry_src(path)")
     .eq("user_id", user.id)
+    .gte('date', startDate)
+    .lt('date', endDate)
     .order("date", { ascending: false });
 
-  console.log(getEntries.data)
+  const entriesMap = getEntries.data?.reduce((acc, entry) => {
+    acc[entry.date] = entry;
+    return acc;
+  }, {} as Record<string, JournalEntry & { attachments: { path: string | null }[] }>);
+
+  const past365Activity = Array.from({ length: 365 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toLocaleDateString('en-CA');
+    const entry = entriesMap?.[dateStr];
+    return {
+      date: dateStr,
+      text: entry?.text,
+      attachments: entry?.attachments,
+      count: entry?.text ? 1 : 0,
+      level: Math.min(4, (entry?.text?.length ?? 0) / 10)
+    }
+  });
 
 
   return (
@@ -59,10 +101,11 @@ export default async function ProtectedPage() {
             hideMonthLabels={false}
             hideTotalCount
             blockRadius={20}
-            data={getEntries.data?.map((entry) => ({ date: entry.date, count: 1, level: Math.min(4, (entry.text?.length ?? 0) / 10) }))}
+            data={past365Activity}
           />
         }
-        <JournalDashboardComponent />
+        {/* <MonthYearSelectorComponent /> */}
+        <JournalDashboardComponent entries={past365Activity} />
       </div>
 
     </div>

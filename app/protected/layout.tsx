@@ -41,7 +41,6 @@ export default async function Layout({
                                 Supabase
                             </a>
                         </p>
-                        <ThemeSwitcher />
                     </footer>
                 </div>
             </main>

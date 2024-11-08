@@ -22,27 +22,54 @@ async function main() {
 
       const supabase = serviceClient();
 
-      const list = await supabase.storage.from("user").list(uid, {});
+      const [signedUrls, files] = await Promise.all([
+        supabase.storage.from("user").createSignedUrls(imagepaths, 60),
+        supabase.storage.from("user").list(uid, {}),
+      ]);
 
-      const imageUrl = await supabase.storage
-        .from("user")
-        .createSignedUrl(imagepaths[0], 60);
-
-      if (imageUrl.error) {
-        console.log(imageUrl.error);
-        throw new Error("failed to create signed url", imageUrl.error);
+      if (files.error || signedUrls.error) {
+        console.log(files.error || signedUrls.error);
+        throw new Error("failed to create signed url");
       }
 
-      const res = await transcribeImage(context, imageUrl.data?.signedUrl);
+      for (const signedUrl of signedUrls.data) {
+        const file = files.data.find((f) => f.name === signedUrl.path);
+        if (!file) {
+          console.warn(`could not find file ${signedUrl.path}, skipping...`);
+          continue;
+        }
 
-      const entries =
-        res?.entries?.map((entry) => ({
-          date: entry.date,
-          text: entry.text,
-          user_id: uid,
-        })) ?? [];
+        const res = await transcribeImage(context, signedUrl.signedUrl);
 
-      const insertEntries = await supabase.from("entries").insert(entries);
+        const entries =
+          res?.entries?.map((entry) => ({
+            date: entry.date,
+            text: entry.text,
+            user_id: uid,
+          })) ?? [];
+
+        const insertEntries = await supabase
+          .from("entries")
+          .insert(entries)
+          .select();
+        if (insertEntries.error) {
+          console.error(insertEntries.error);
+          continue;
+        }
+        const insertSources = await supabase.from("entry_src").insert(
+          insertEntries.data.map((entry) => ({
+            date: entry.date,
+            user_id: uid,
+            file_id: file.id,
+            path: signedUrl.path,
+          }))
+        );
+
+        if (insertSources.error) {
+          console.error(insertSources.error);
+          continue;
+        }
+      }
     } catch (error) {
       console.error(error);
       throw error;

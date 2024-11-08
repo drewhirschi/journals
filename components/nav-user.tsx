@@ -5,8 +5,11 @@ import {
   Bell,
   ChevronsUpDown,
   CreditCard,
+  Laptop,
   LogOut,
+  Moon,
   Sparkles,
+  Sun,
 } from "lucide-react"
 
 import {
@@ -20,6 +23,8 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -33,6 +38,7 @@ import { Skeleton } from "./ui/skeleton"
 import { Suspense, use } from "react"
 import { browswerClient } from "@/utils/supabase/client"
 import { UserResponse } from "@supabase/supabase-js"
+import { useTheme } from "next-themes"
 
 
 function NavUserSkeleton() {
@@ -54,9 +60,12 @@ function NavUserSkeleton() {
 
 export function NavUser({ user }: { user: Promise<UserResponse> }) {
   const supabase = browswerClient();
+  const { theme, setTheme } = useTheme();
 
   const { isMobile } = useSidebar()
   const userRes = use(user)
+
+  const ICON_SIZE = 16;
 
 
   return (
@@ -100,6 +109,24 @@ export function NavUser({ user }: { user: Promise<UserResponse> }) {
                 </div>
               </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup
+              value={theme}
+              onValueChange={(e) => setTheme(e)}
+            >
+              <DropdownMenuRadioItem className="flex gap-2" value="light">
+                <Sun size={ICON_SIZE} className="text-muted-foreground" />{" "}
+                <span>Light</span>
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem className="flex gap-2" value="dark">
+                <Moon size={ICON_SIZE} className="text-muted-foreground" />{" "}
+                <span>Dark</span>
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem className="flex gap-2" value="system">
+                <Laptop size={ICON_SIZE} className="text-muted-foreground" />{" "}
+                <span>System</span>
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>

@@ -83,12 +83,16 @@ const data = {
       items: [
 
         {
-          title: "Uploads",
-          url: "/protected/uploads",
+          title: "Upload",
+          url: "/protected/upload",
         },
         {
           title: "In progress",
-          url: "/protected/jobs",
+          url: "/protected/upload/progress",
+        },
+        {
+          title: "Need review",
+          url: "/protected/upload/review",
         },
 
       ],
@@ -145,7 +149,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
