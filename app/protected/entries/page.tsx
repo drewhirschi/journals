@@ -51,7 +51,7 @@ export default async function ProtectedPage({ searchParams }: { searchParams: Pr
   const getEntries = await supabase
     .from("entries")
     .select("*, attachments:entry_src(path)")
-    .eq("user_id", user.id)
+    .eq("account_id", user.id)
     .gte('date', startDate)
     .lt('date', endDate)
     .order("date", { ascending: false });
@@ -68,10 +68,10 @@ export default async function ProtectedPage({ searchParams }: { searchParams: Pr
     const entry = entriesMap?.[dateStr];
     return {
       date: dateStr,
-      text: entry?.text,
+      text: entry?.content,
       attachments: entry?.attachments,
-      count: entry?.text ? 1 : 0,
-      level: Math.min(4, (entry?.text?.length ?? 0) / 10)
+      count: entry?.content ? 1 : 0,
+      level: Math.min(4, (entry?.content?.length ?? 0) / 10)
     }
   });
 

@@ -60,7 +60,7 @@ export default function UppySupabaseUploader(props: { session: Session }) {
             console.log("adding file handler")
 
             const supabaseMetadata = {
-                bucketName: "user",
+                bucketName: "account",
                 objectName: `${props.session.user?.id}/${file.id.split("/")[file.id.split("/").length - 1]}.${file.extension}`,
                 contentType: file.type,
             }
@@ -117,14 +117,17 @@ export default function UppySupabaseUploader(props: { session: Session }) {
                 <AccordionItem value="review">
                     <AccordionTrigger>Review</AccordionTrigger>
                     <AccordionContent>
-                        <Button loading={loading} onClick={async () => {
-                            // console.log(uploadRes)
-                            setLoading(true)
-                            const imagesNames = uploadRes?.successful?.map((file) => file.meta.objectName) as string[] || []
-                            await addImagesToProcessQueue(imagesNames, context)
-                            setLoading(false)
-                            // router.push('/protected/upload/process')
-                        }}>
+                        <Button
+                            // loading={loading}
+                            disabled={loading}
+                            onClick={async () => {
+                                // console.log(uploadRes)
+                                setLoading(true)
+                                const imagesNames = uploadRes?.successful?.map((file) => file.meta.objectName) as string[] || []
+                                await addImagesToProcessQueue(imagesNames, context)
+                                setLoading(false)
+                                // router.push('/protected/upload/process')
+                            }}>
                             Submit
                         </Button>
                     </AccordionContent>

@@ -24,7 +24,7 @@ export async function addImagesToProcessQueue(
   try {
     await boss.start();
 
-    await boss.createQueue(queue);
+    await boss.createQueue(queue, { retryLimit: 3, name: queue });
 
     const id = await boss.send(queue, { uid, imagepaths, context });
 
@@ -37,6 +37,6 @@ export async function addImagesToProcessQueue(
 
 export async function removeImage(path: string) {
   const supabase = await createClient();
-  const remove = await supabase.storage.from("user").remove([path]);
+  const remove = await supabase.storage.from("account").remove([path]);
   revalidatePath("/protected/uploads");
 }

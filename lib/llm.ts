@@ -12,13 +12,13 @@ export async function transcribeImage(context: string, imageUrl: string) {
   const compl = await getStructuredCompletion({
     model: CompletionModels.gpt4o,
     system:
-      "You are a helpful assistant. Your job is to transcribe journal entries. The date should be in the format YYYY/MM/DD",
+      "You are a helpful assistant. Your job is to transcribe journal entries. The date MUST be in the format YYYY/MM/DD. Do your best to create markdown for the content that matches the style of the content in the image.",
     user: context,
     imageUrl,
     schema: z.object({
       entries: z.array(
         z.object({
-          text: z.string(),
+          content: z.string(),
           date: z.string(),
         })
       ),

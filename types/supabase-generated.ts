@@ -789,54 +789,83 @@ export type Database = {
     Tables: {
       entries: {
         Row: {
+          account_id: string
+          content: string | null
           created_at: string
           date: string
-          text: string | null
-          user_id: string
         }
         Insert: {
+          account_id: string
+          content?: string | null
           created_at?: string
           date: string
-          text?: string | null
-          user_id: string
         }
         Update: {
+          account_id?: string
+          content?: string | null
           created_at?: string
           date?: string
-          text?: string | null
-          user_id?: string
         }
         Relationships: []
       }
+      entry_proposal: {
+        Row: {
+          account_id: string
+          content: string | null
+          created_at: string
+          date: string
+        }
+        Insert: {
+          account_id: string
+          content?: string | null
+          created_at?: string
+          date: string
+        }
+        Update: {
+          account_id?: string
+          content?: string | null
+          created_at?: string
+          date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entry_proposal_account_id_date_fkey"
+            columns: ["account_id", "date"]
+            isOneToOne: true
+            referencedRelation: "entries"
+            referencedColumns: ["account_id", "date"]
+          },
+        ]
+      }
       entry_src: {
         Row: {
+          account_id: string
           created_at: string
           date: string
           file_id: string
           path: string | null
-          user_id: string
         }
         Insert: {
+          account_id: string
           created_at?: string
           date: string
           file_id: string
           path?: string | null
-          user_id: string
         }
         Update: {
+          account_id?: string
           created_at?: string
           date?: string
           file_id?: string
           path?: string | null
-          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "entry_src_entries_fkey"
-            columns: ["user_id", "date"]
+            foreignKeyName: "entry_src_account_id_date_fkey"
+            columns: ["account_id", "date"]
             isOneToOne: false
             referencedRelation: "entries"
-            referencedColumns: ["user_id", "date"]
+            referencedColumns: ["account_id", "date"]
           },
         ]
       }

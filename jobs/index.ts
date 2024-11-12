@@ -18,13 +18,17 @@ async function main() {
 
   await boss.work(queue, async ([job]) => {
     try {
-      const { uid, imagepaths, context } = job.data as any;
+      const { uid, imagepaths, context } = job.data as {
+        uid: string;
+        imagepaths: string[];
+        context: string;
+      };
 
       const supabase = serviceClient();
 
       const [signedUrls, files] = await Promise.all([
-        supabase.storage.from("user").createSignedUrls(imagepaths, 60),
-        supabase.storage.from("user").list(uid, {}),
+        supabase.storage.from("account").createSignedUrls(imagepaths, 600),
+        supabase.storage.from("account").list(uid, {}),
       ]);
 
       if (files.error || signedUrls.error) {
@@ -33,7 +37,9 @@ async function main() {
       }
 
       for (const signedUrl of signedUrls.data) {
-        const file = files.data.find((f) => f.name === signedUrl.path);
+        const file = files.data.find(
+          (f) => uid + "/" + f.name === signedUrl.path
+        );
         if (!file) {
           console.warn(`could not find file ${signedUrl.path}, skipping...`);
           continue;
@@ -44,22 +50,32 @@ async function main() {
         const entries =
           res?.entries?.map((entry) => ({
             date: entry.date,
-            text: entry.text,
-            user_id: uid,
+            content: entry.content,
+            account_id: uid,
           })) ?? [];
 
-        const insertEntries = await supabase
-          .from("entries")
+        const insertEntries = await supabase.from("entries").upsert(
+          entries.map((entry) => ({
+            date: entry.date,
+            account_id: uid,
+          })),
+          { ignoreDuplicates: true }
+        );
+
+        const insertEntryProposals = await supabase
+          .from("entry_proposal")
           .insert(entries)
           .select();
-        if (insertEntries.error) {
-          console.error(insertEntries.error);
+
+        if (insertEntryProposals.error) {
+          console.error(insertEntryProposals.error);
           continue;
         }
+
         const insertSources = await supabase.from("entry_src").insert(
-          insertEntries.data.map((entry) => ({
+          insertEntryProposals.data.map((entry) => ({
             date: entry.date,
-            user_id: uid,
+            account_id: uid,
             file_id: file.id,
             path: signedUrl.path,
           }))

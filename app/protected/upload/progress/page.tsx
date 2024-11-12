@@ -30,7 +30,7 @@ export default async function Page() {
         .flatMap((job) => job.data.imagepaths.map((path) => ({ jobId: job.id, path })))
         .map(({ jobId, path }) =>
             supabase.storage
-                .from("user")
+                .from("account")
                 .createSignedUrl(path, 60, { transform: { height: 400, width: 300 } })
                 .then((res) => ({ jobId, path, url: res.data?.signedUrl }))
         );

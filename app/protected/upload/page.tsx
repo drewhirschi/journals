@@ -22,13 +22,13 @@ export default async function Page() {
     }
     const { session } = sessionData
 
-    const userFileGet = await supabase.storage.from("user").list(session.user.id, {})
+    const userFileGet = await supabase.storage.from("account").list(session.user.id, {})
     if (userFileGet.error) {
         throw userFileGet.error
     }
     const signedUrls = await supabase
         .storage
-        .from('user')
+        .from('account')
         .createSignedUrls(userFileGet.data.map((file) => `${session.user.id}/${file.name}`), 60);
 
 
