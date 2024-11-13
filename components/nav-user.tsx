@@ -150,7 +150,11 @@ export function NavUser({ user }: { user: Promise<UserResponse> }) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={async () => {
+                await supabase.auth.signOut()
+              }}
+            >
               <LogOut />
               Log out
             </DropdownMenuItem>
