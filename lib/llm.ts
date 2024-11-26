@@ -11,8 +11,20 @@ export enum CompletionModels {
 export async function transcribeImage(context: string, imageUrl: string) {
   const compl = await getStructuredCompletion({
     model: CompletionModels.gpt4o,
-    system:
-      "You are a helpful assistant. Your job is to transcribe journal entries. The date MUST be in the format YYYY/MM/DD. Do your best to create markdown for the content that matches the style of the content in the image.",
+    system: `Convert the provided image of journal entries into Markdown format appropriately separated into JSON objects.
+
+# Steps 
+
+1. Extract all text content from each journal entry in the provided image.
+2. Identify and transform:
+   - The date of each journal entry, represented in the format 'YYYY/MM/DD'.
+   - The journal text content, formatted in Markdown.
+3. Ensure all words and content is extracted for each entry. 
+4. Structure each journal entry as a JSON object with the following keys:
+   - 'date': the date of the entry, in 'YYYY/MM/DD' format.
+   - 'content': The content of the journal entry, formatted in Markdown.
+5. Combine all individual journal JSON objects into an array in the response. 
+`,
     user: context,
     imageUrl,
     schema: z.object({

@@ -1,5 +1,5 @@
 
-import React, { Suspense, useEffect, useRef } from 'react'
+import React, { Suspense, } from 'react'
 
 import { createClient } from '@/utils/supabase/server'
 import UppySupabaseUploader from './file-upload'

@@ -24,6 +24,8 @@ async function main() {
         context: string;
       };
 
+      console.log(`Got job for account ${uid} with ${imagepaths.length} images`)
+
       const supabase = serviceClient();
 
       const [signedUrls, files] = await Promise.all([

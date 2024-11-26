@@ -1,22 +1,22 @@
 'use client'
 
-import { useState } from 'react'
-import Image from 'next/image'
 import { Trash2, Zap } from 'lucide-react'
+import { addImagesToProcessQueue, removeImage } from '@/app/protected/[acctId]/upload/actions'
+
 import { Button } from "@/components/ui/button"
-import { removeImage } from '@/app/protected/uploads/actions'
-import { addImagesToProcessQueue } from '@/app/protected/upload/actions'
+import Image from 'next/image'
+import { transcribeImage } from '@/app/protected/[acctId]/entry/[date]/actions'
+import { useState } from 'react'
 
 interface InteractiveImageProps {
   src: string
   alt: string
   path: string
-  // onDelete: () => void
-  // onProcess: () => void
 }
 
 export default function InteractiveImage({ src, alt, path }: InteractiveImageProps) {
   const [isActive, setIsActive] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const toggleActive = () => setIsActive(!isActive)
 
@@ -62,14 +62,25 @@ export default function InteractiveImage({ src, alt, path }: InteractiveImagePro
         </Button>
 
         <Button
+          disabled={!path}
           variant="default"
           size="sm"
           onClick={async () => {
-            await addImagesToProcessQueue([path], "this is for the year 2024")
+            setLoading(true)
+            try {
+
+              const markdown = await transcribeImage(path)
+
+            } catch (error) {
+
+            } finally {
+              setLoading(false)
+
+            }
           }}
         >
           <Zap className="w-4 h-4 mr-2" />
-          Process
+          Transcribe
         </Button>
       </div>
     </div>
