@@ -1,7 +1,9 @@
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
-// import { ChatCompletionContentPart } from "openai/resources";
+import { AzureOpenAI, OpenAI } from "openai";
 import { date, z } from "zod";
+
+import { zodResponseFormat } from "openai/helpers/zod";
+
+// import { ChatCompletionContentPart } from "openai/resources";
 
 export enum CompletionModels {
   gpt4o = "gpt-4o",
@@ -101,4 +103,52 @@ export async function getEmbedding(text: string): Promise<number[]> {
     input: text,
   });
   return embedding.data[0].embedding;
+}
+
+export async function gptOCR({
+  filePath,
+  model = "gpt-4o",
+}: {
+  filePath: string;
+  model?: "gpt-4o";
+}) {
+  const llm = new AzureOpenAI({
+    apiKey: process.env.AZURE_OPENAI_KEY,
+    deployment: model,
+    baseURL: process.env.AZURE_OPENAI_URL,
+    apiVersion: "2024-08-01-preview",
+  });
+
+  const systemPrompt = `You are an assistant that converts images of text into text for prosemirror.
+
+
+Requirements:
+
+  - Output Only html: Return solely the html for content without any additional explanations or comments.
+  - Use h, u, and b tags for styled content.
+  - No Delimiters: Do not use code fences or delimiters like \`\`\`markdown.
+  - Complete Content: Do not omit any part of the page, including headers, footers, and subtext.
+  `;
+
+  const finalImageUrl = filePath;
+
+  const output = await llm.chat.completions.create({
+    model: model,
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: systemPrompt },
+          {
+            type: "image_url",
+            image_url: {
+              url: finalImageUrl,
+            },
+          },
+        ],
+      },
+    ],
+  });
+
+  return output.choices[0].message.content;
 }

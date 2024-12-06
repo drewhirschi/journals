@@ -18,59 +18,42 @@ export default async function Page({ params }: { params: Promise<{ date: string,
 
     const supabase = await createClient()
 
+    const [sessionGet, entryGet, imagePathsGet] = await Promise.all([
+        supabase.auth.getSession(),
+        supabase
+            .from('entries')
+            .select('*')
+            .eq('account_id', acctId)
+            .eq('date', date)
+            .maybeSingle(),
+        supabase.storage
+            .from('account')
+            .list(`${acctId}/${date}`)
+    ])
 
-    const { data: sessionData } = await supabase.auth.getSession()
-    if (!sessionData.session) {
+
+    if (!sessionGet.data.session) {
         return redirect("/sign-in")
     }
-    const { session } = sessionData
-
-    const entryGet = await supabase
-        .from('entries')
-        .select('*')
-        .eq('account_id', acctId)
-        .eq('date', date)
-        .maybeSingle()
-
     if (entryGet.error) {
         throw entryGet.error
     }
 
 
-    const imagePaths = await supabase.storage
-        .from('account')
-        .list(`${acctId}/${date}`)
-
 
     const signedUrls = await supabase
         .storage
         .from('account')
-        .createSignedUrls(imagePaths.data?.map((file) => `${acctId}/${date}/${file.name}`) ?? [], 60);
-
-
+        .createSignedUrls(imagePathsGet.data?.map((file) => `${acctId}/${date}/${file.name}`) ?? [], 60);
 
 
     return (
-        <div className='flex flex-row w-full'>
 
+        <EntryEditor
+            content={entryGet.data?.content}
+            session={sessionGet.data.session}
+            signedUrls={signedUrls.data ?? []}
+        />
 
-            <div className='flex flex-col flex-auto'>
-                <Navigation date={date} />
-                <EntryEditor userId={acctId} content={entryGet.data?.content} date={date} />
-                <div>
-                    {signedUrls.data?.map((entrySrc) => (
-                        <InteractiveImage
-                            key={entrySrc.path}
-                            src={entrySrc.signedUrl}
-                            alt=''
-                            path={entrySrc.path ?? ''}
-                        />
-                    ))}
-                </div>
-            </div>
-            <div className='flex flex-col flex-auto p-2 justify-start'>
-                <EntryImageUploader session={session} />
-            </div>
-        </div>
     );
 }

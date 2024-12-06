@@ -1,14 +1,14 @@
-import FetchDataSteps from "@/components/tutorial/fetch-data-steps";
-import { Button } from "@/components/ui/button";
-import { createClient } from "@/utils/supabase/server";
-import { InfoIcon } from "lucide-react";
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { NewEntryLink } from "./new-link";
 import { ActivityCalendar } from 'react-activity-calendar';
+import { Button } from "@/components/ui/button";
+import FetchDataSteps from "@/components/tutorial/fetch-data-steps";
+import { InfoIcon } from "lucide-react";
 import { JournalDashboardComponent } from "@/components/journal-dashboard";
-import { MonthYearSelectorComponent } from "@/components/month-year-selector";
 import { JournalEntry } from "@/types/data-models";
+import Link from "next/link";
+import { MonthYearSelectorComponent } from "@/components/month-year-selector";
+import { NewEntryLink } from "./new-link";
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
 import { text } from "stream/consumers";
 
 type ActivityCalendarData = {
@@ -17,16 +17,14 @@ type ActivityCalendarData = {
   level: number;
 }
 
-export default async function ProtectedPage({ searchParams }: { searchParams: Promise<{ month?: string, year?: string }> }) {
+export default async function ProtectedPage({ searchParams, params }:
+  {
+    searchParams: Promise<{ month?: string, year?: string }>
+    params: Promise<{ acctId: string }>
+  }) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return redirect("/sign-in");
-  }
+  const { acctId } = await params;
 
   let { month: monthStr, year: yearStr } = await searchParams;
 
@@ -51,7 +49,7 @@ export default async function ProtectedPage({ searchParams }: { searchParams: Pr
   const getEntries = await supabase
     .from("entries")
     .select("*, attachments:entry_src(path)")
-    .eq("account_id", user.id)
+    .eq("account_id", acctId)
     .gte('date', startDate)
     .lt('date', endDate)
     .order("date", { ascending: false });

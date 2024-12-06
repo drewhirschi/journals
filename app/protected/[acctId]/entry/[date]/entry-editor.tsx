@@ -2,28 +2,39 @@
 
 import './styles.scss'
 
-import { EditorEvents, EditorProvider, useCurrentEditor } from '@tiptap/react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Cloud, CloudUpload, Terminal } from 'lucide-react'
+import { Editor, EditorContent, EditorEvents, EditorProvider, FloatingMenu, TiptapEditorHTMLElement, useCurrentEditor, useEditor } from '@tiptap/react'
 import React, { useState } from 'react'
+import { Row, Stack } from '@/components/layout-components'
 
 import { Button } from '@/components/ui/button'
 import { Color } from '@tiptap/extension-color'
+import EntryImageUploader from './ImageUploader'
+import InteractiveImage from '@/components/interactive-image'
 import ListItem from '@tiptap/extension-list-item'
 import { Markdown } from 'tiptap-markdown';
-import { Row } from '@/components/layout-components'
+import { Navigation } from './Navigation'
+import { Session } from '@supabase/supabase-js'
 import StarterKit from '@tiptap/starter-kit'
 import TextStyle from '@tiptap/extension-text-style'
 import Underline from '@tiptap/extension-underline'
 import { browswerClient } from '@/utils/supabase/client'
+import { on } from 'events'
+import { transcribeImage } from './actions'
 import { useDebouncedCallback } from 'use-debounce';
+import { useParams } from 'next/navigation'
 
-const MenuBar = () => {
-    const { editor } = useCurrentEditor()
+const MenuBar = ({ editor }: { editor: Editor | null }) => {
+    // const { editor } = useCurrentEditor()
+
 
     if (!editor) {
         return null
     }
 
     return (
+
         <div className="control-group">
             <Row spacing='tight' wrap>
                 <Button
@@ -70,12 +81,12 @@ const MenuBar = () => {
                 {/* <Button onClick={() => editor.chain().focus().clearNodes().run()}>
                     Clear nodes
                 </Button> */}
-                <Button
+                {/* <Button
                     onClick={() => editor.chain().focus().setParagraph().run()}
                     variant={editor.isActive('paragraph') ? 'default' : 'secondary'}
                 >
                     P
-                </Button>
+                </Button> */}
                 <Button
                     onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
                     variant={editor.isActive('heading', { level: 1 }) ? 'default' : 'secondary'}
@@ -97,7 +108,7 @@ const MenuBar = () => {
                 <Button
                     variant={'secondary'}
                     onClick={() => editor.chain().focus().unsetAllMarks().run()}>
-                    Clear styles
+                    Clear
                 </Button>
 
             </Row>
@@ -125,21 +136,96 @@ const extensions = [
 
 
 
-export default ({ userId, content, date }:
-    { userId: string, content: string | undefined | null, date: string }) => {
+export default ({ content, session, signedUrls }:
+    {
+        content: string | undefined | null, session: Session, signedUrls: {
+            error: string | null;
+            path: string | null;
+            signedUrl: string;
+        }[]
+    }) => {
+    const { acctId, date } = useParams()
     const supabase = browswerClient()
+    const [error, setError] = useState<string | null>(null)
+    const [saving, setSaving] = useState(false)
 
     const debouncedUpdate = useDebouncedCallback(
         async (update: EditorEvents["update"]) => {
-
-            await supabase.from("entries").upsert({ content: update.editor.getHTML(), date, account_id: userId })
+            setSaving(true)
+            await supabase.from("entries").upsert({
+                content: update.editor.getHTML(),
+                date: date as string,
+                account_id: acctId as string
+            })
+            setSaving(false)
         }, 1000);
 
+    const editor = useEditor({
+        extensions,
+        content,
+        onUpdate: debouncedUpdate
+    })
+
+
+    const onTranscribe = async (path: string) => {
+        try {
+            const markdown = await transcribeImage(path)
+
+            if (!editor) throw new Error("editor not found")
+
+            let newContent = editor?.getHTML()
+            if (!newContent) {
+                newContent = markdown || ""
+            } else {
+                newContent = `${newContent}\n\n${markdown}`
+            }
+            editor?.commands.setContent(newContent)
+
+        } catch (error) {
+            setError((error as Error).message)
+        }
+    }
+
     return (
-        <div className="border rounded-lg overflow-hidden shadow-sm min-h-96 md:min-w-[720px]">
-            <EditorProvider immediatelyRender={false} onUpdate={debouncedUpdate} slotBefore={<MenuBar />} extensions={extensions} content={content}>
-            </EditorProvider>
-        </div>
+        <Row>
+
+            <Stack>
+
+                <Navigation date={date as string} />
+
+                <div className="border rounded-lg overflow-hidden shadow-sm min-h-96 md:min-w-[720px]">
+                    <Row justify='between'>
+                        <MenuBar editor={editor} />
+                        <div className='mx-2'>
+
+                            {saving ? <CloudUpload /> : <Cloud />}
+                        </div>
+                    </Row>
+                    <EditorContent editor={editor} />
+                    {/* <FloatingMenu editor={editor}><MenuBar editor={editor} /></FloatingMenu> */}
+                </div>
+
+                {signedUrls.map((entrySrc) => (
+                    <InteractiveImage
+                        key={entrySrc.path}
+                        src={entrySrc.signedUrl}
+                        alt=''
+                        path={entrySrc.path ?? ''}
+                        onProcess={() => onTranscribe(entrySrc.path ?? '')}
+                    />
+                ))}
+            </Stack>
+            <div className='flex flex-col flex-auto p-2 justify-start'>
+                <EntryImageUploader session={session} />
+            </div>
+            {error && <Alert variant={"destructive"} className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+                <Terminal className="h-4 w-4" />
+                <AlertTitle>There was an error</AlertTitle>
+                <AlertDescription>
+                    {JSON.stringify(error)}
+                </AlertDescription>
+            </Alert>}
+        </Row>
     );
 
 }

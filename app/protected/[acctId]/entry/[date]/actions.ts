@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { ocr } from "llama-ocr";
+import { gptOCR } from "@/lib/llm";
 import { revalidatePath } from "next/cache";
 
 export const transcribeImage = async (path: string) => {
@@ -16,22 +16,18 @@ export const transcribeImage = async (path: string) => {
       throw signedUrl.error;
     }
 
-    const markdown = await ocr({
-      model: "Llama-3.2-90B-Vision",
+    const content = await gptOCR({
       filePath: signedUrl.data.signedUrl,
-      apiKey: process.env.TOGETHER_API_KEY,
     });
 
-    const [acctId, date] = path.split("/");
-
-    // const upsert = await supabase
-    //   .from("entries")
-    //   .upsert({ content: markdown, date, account_id: acctId });
-
-    // revalidatePath(`/protected/${acctId}/entry/${date}`);
-
-    return markdown;
+    return content;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
+
+export async function refreshEntryPage(acctId: string, date: string) {
+  console.log("revalidating", `/protected/${acctId}/entry/${date}`);
+  revalidatePath(`/protected/${acctId}/entry/${date}`);
+}

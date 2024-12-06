@@ -31,12 +31,12 @@ import { browswerClient } from "@/utils/supabase/client"
 
 export function TeamSwitcher({
 }: {
-  teams: {
-    name: string
-    logo: React.ElementType
-    plan: string
-  }[]
-}) {
+    // teams: {
+    //   name: string
+    //   logo: React.ElementType
+    //   plan: string
+    // }[]
+  }) {
   const { isMobile } = useSidebar()
   const supabase = browswerClient()
   const [activeTeam, setActiveTeam] = React.useState<BasejumpAccount | null>(null)

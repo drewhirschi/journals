@@ -12,9 +12,10 @@ interface InteractiveImageProps {
   src: string
   alt: string
   path: string
+  onProcess: () => Promise<void>
 }
 
-export default function InteractiveImage({ src, alt, path }: InteractiveImageProps) {
+export default function InteractiveImage({ src, alt, path, onProcess }: InteractiveImageProps) {
   const [isActive, setIsActive] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -42,14 +43,12 @@ export default function InteractiveImage({ src, alt, path }: InteractiveImagePro
         className="w-full h-auto transition-transform duration-300 ease-in-out group-hover:scale-105"
       />
       <div
-        className={`absolute inset-0 bg-black transition-opacity duration-300 ease-in-out ${isActive ? 'opacity-50' : 'opacity-0'
-          }`}
+        className={`absolute inset-0 bg-black transition-opacity duration-300 ease-in-out ${isActive ? 'opacity-50' : 'opacity-0'}`}
       />
-      <div
-        className={`absolute bottom-0 left-0 right-0 flex justify-center space-x-4 p-4 transition-transform duration-300 ease-in-out ${isActive ? 'translate-y-0' : 'translate-y-full'
-          }`}
-      >
 
+      <div
+        className={`absolute bottom-0 left-0 right-0 flex justify-center space-x-4 p-4 transition-transform duration-300 ease-in-out ${isActive ? 'translate-y-0' : 'translate-y-full'}`}
+      >
         <Button
           variant="destructive"
           size="sm"
@@ -68,14 +67,11 @@ export default function InteractiveImage({ src, alt, path }: InteractiveImagePro
           onClick={async () => {
             setLoading(true)
             try {
-
-              const markdown = await transcribeImage(path)
-
+              await onProcess()
             } catch (error) {
-
+              console.error(error)
             } finally {
               setLoading(false)
-
             }
           }}
         >
@@ -83,6 +79,12 @@ export default function InteractiveImage({ src, alt, path }: InteractiveImagePro
           Transcribe
         </Button>
       </div>
+
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
+          <div className="w-8 h-8 border-4 border-t-transparent border-white rounded-full animate-spin"></div>
+        </div>
+      )}
     </div>
   )
 }

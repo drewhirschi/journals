@@ -26,7 +26,7 @@ export default async function Page() {
                             </div>
                             <div className='flex-1' >
 
-                                <EntryEditor proposal content={proposal.content} date={proposal.date} userId={proposal.account_id} />
+                                {/* <EntryEditor content={proposal.content} userId={proposal.account_id} /> */}
                             </div>
                         </div>
                         <div className='flex flex-row justify-end gap-2'>

@@ -1,22 +1,27 @@
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+
 import { AppSidebar } from "@/components/app-sidebar";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import HeaderAuth from "@/components/header-auth";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { hasEnvVars } from "@/utils/supabase/check-env-vars";
 import { createClient } from "@/utils/supabase/server";
+import { hasEnvVars } from "@/utils/supabase/check-env-vars";
 
 export default async function Layout({
     children,
+    params
 }: {
     children: React.ReactNode;
+    params: Promise<{ acctId: string }>
 }) {
 
     const sb = await createClient()
     const user = sb.auth.getUser()
+
+    const { acctId } = await params
     return <div>
         <SidebarProvider>
-            <AppSidebar user={user} />
+            <AppSidebar acctId={acctId} user={user} />
             <main className="min-h-screen flex flex-col items-center w-full">
                 <div className="flex-1 w-full flex flex-col  items-center">
                     <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">

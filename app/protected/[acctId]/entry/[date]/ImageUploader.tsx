@@ -20,6 +20,7 @@ import { Session } from '@supabase/supabase-js'
 import { Textarea } from "@/components/ui/textarea"
 import Tus from '@uppy/tus'
 import { browswerClient } from '@/utils/supabase/client'
+import { refreshEntryPage } from './actions'
 
 // Import Uppy styles
 
@@ -86,6 +87,7 @@ export default function EntryImageUploader(props: { session: Session }) {
         })
         uppy.on('complete', async (res) => {
             console.log('complete', res)
+            refreshEntryPage(params.acctId as string, params.date as string)
         })
 
 
